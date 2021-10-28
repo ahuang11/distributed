@@ -61,10 +61,12 @@ async def test_deprecated_loop_properties():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("asynchronous", [True, False])
-async def test_sync_defaults_to_cluster_setting(asynchronous, loop_in_thread):
+@pytest.mark.parametrize("asynchronous_cluster", [True, False])
+async def test_sync_defaults_to_cluster_setting(
+    asynchronous_cluster, loop_in_thread, cleanup
+):
 
-    cluster = Cluster(asynchronous=asynchronous)
+    cluster = Cluster(asynchronous=asynchronous_cluster)
     cluster.loop = loop_in_thread
 
     async def foo():
@@ -72,7 +74,7 @@ async def test_sync_defaults_to_cluster_setting(asynchronous, loop_in_thread):
 
     result = cluster.sync(foo)
 
-    if asynchronous:
+    if asynchronous_cluster:
         assert isinstance(result, CoroutineType)
         assert await result == 1
     else:
@@ -82,7 +84,7 @@ async def test_sync_defaults_to_cluster_setting(asynchronous, loop_in_thread):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("asynchronous_cluster", [True, False])
 async def test_sync_allows_override_of_asychronous(
-    asynchronous_cluster, loop_in_thread
+    asynchronous_cluster, loop_in_thread, cleanup
 ):
 
     cluster = Cluster(asynchronous=asynchronous_cluster)
