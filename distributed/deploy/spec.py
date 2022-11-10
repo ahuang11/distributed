@@ -672,6 +672,6 @@ async def run_spec(spec: dict[str, Any], *args: Any) -> dict[str, Worker | Nanny
 def close_clusters():
     for cluster in list(SpecCluster._instances):
         if getattr(cluster, "shutdown_on_close", False):
-            with suppress(gen.TimeoutError, TimeoutError):
+            with suppress(gen.TimeoutError, TimeoutError, RuntimeError):
                 if getattr(cluster, "status", Status.closed) != Status.closed:
                     cluster.sync(cluster.close, asynchronous=False, callback_timeout=10)
