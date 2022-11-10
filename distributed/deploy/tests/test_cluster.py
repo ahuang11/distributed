@@ -5,6 +5,8 @@ from tornado.ioloop import IOLoop
 
 from types import CoroutineType
 
+import pytest
+
 from distributed.deploy.cluster import Cluster
 from distributed.utils_test import gen_test
 from tornado.ioloop import IOLoop
