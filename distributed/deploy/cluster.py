@@ -279,6 +279,26 @@ class Cluster(SyncMethodMixin):
         """
         raise NotImplementedError()
 
+    @property
+    def asynchronous(self):
+        return (
+            self._asynchronous
+            or getattr(thread_state, "asynchronous", False)
+            or hasattr(self.loop, "_thread_identity")
+            and self.loop._thread_identity == threading.get_ident()
+        )
+
+    def sync(self, func, *args, asynchronous=None, callback_timeout=None, **kwargs):
+        if asynchronous is None:
+            asynchronous = self.asynchronous
+        if asynchronous:
+            future = func(*args, **kwargs)
+            if callback_timeout is not None:
+                future = asyncio.wait_for(future, callback_timeout)
+            return future
+        else:
+            return sync(self.loop, func, *args, **kwargs)
+
     def _log(self, log):
         """Log a message.
 
