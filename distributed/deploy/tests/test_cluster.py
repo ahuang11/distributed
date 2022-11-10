@@ -3,8 +3,12 @@ from __future__ import annotations
 import pytest
 from tornado.ioloop import IOLoop
 
+from types import CoroutineType
+
 from distributed.deploy.cluster import Cluster
 from distributed.utils_test import gen_test
+from tornado.ioloop import IOLoop
+from distributed.utils_test import loop_in_thread
 
 
 @gen_test()
@@ -52,3 +56,42 @@ async def test_deprecated_loop_properties():
     assert [(w.category, *w.message.args) for w in warninfo] == [
         (DeprecationWarning, "setting the loop property is deprecated")
     ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("asynchronous", [True, False])
+async def test_sync_defaults_to_cluster_setting(asynchronous, loop_in_thread):
+
+    cluster = Cluster(asynchronous=asynchronous)
+    cluster.loop = loop_in_thread
+
+    async def foo():
+        return 1
+
+    result = cluster.sync(foo)
+
+    if asynchronous:
+        assert isinstance(result, CoroutineType)
+        assert await result == 1
+    else:
+        assert result == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("asynchronous_cluster", [True, False])
+async def test_sync_allows_override_of_asychronous(
+    asynchronous_cluster, loop_in_thread
+):
+
+    cluster = Cluster(asynchronous=asynchronous_cluster)
+    cluster.loop = loop_in_thread
+
+    async def foo():
+        return 1
+
+    async_result = cluster.sync(foo, asynchronous=True)
+    sync_result = cluster.sync(foo, asynchronous=False)
+
+    assert isinstance(async_result, CoroutineType)
+    assert await async_result == 1
+    assert sync_result == 1
